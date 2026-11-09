@@ -11,6 +11,10 @@ OpenRemote 是一个开箱即用的远程桌面客户端：在两台电脑上登
 
 [OpenRemote 远程桌面演示（哔哩哔哩）](https://www.bilibili.com/video/BV1TPW86xEvi/)
 
+## 下载
+
+[下载 OpenRemote（GitHub Releases）](https://github.com/pwxpwxtop/OpenRemote/releases/tag/OpenRemote)
+
 ## 功能特性
 
 - **实时画面**：ffmpeg 采集并编码 H.264，优先硬件编码（NVENC / QSV / AMF / VideoToolbox），不可用时回退 libx264
