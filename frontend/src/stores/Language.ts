@@ -1,0 +1,341 @@
+import { computed, ref, watch } from 'vue'
+import { defineStore } from 'pinia'
+
+export type Locale = 'zh-CN' | 'en-US'
+
+const STORAGE_KEY = 'openremote.locale'
+
+type Messages = Record<string, string>
+
+const zhCN: Messages = {
+  'app.name': 'OpenRemote',
+  'app.tagline': '远程桌面',
+
+  'nav.devices': '设备',
+  'nav.addServer': '添加服务器',
+  'nav.promotion': '推荐服务器',
+  'nav.settings': '设置',
+
+  'promotion.title': '推荐远程服务器',
+  'promotion.subtitle': '为 OpenRemote 远程桌面选一台就近的云服务器，连接更快更稳',
+  'promotion.tencentName': '腾讯云',
+  'promotion.tencentDesc': '轻量应用服务器开箱即用，适合部署远程桌面服务，延迟低。',
+  'promotion.baiduName': '百度云',
+  'promotion.baiduDesc': '百度智能云服务器 BCC，性能稳定，适合长时间运行远程桌面。',
+  'promotion.open': '前往了解',
+  'promotion.hint': '链接为第三方云厂商活动页，购买与售后由对应厂商提供。',
+
+  'home.title': '远程控制',
+  'home.subtitle': '通过中转节点连接你自己的电脑',
+  'home.myDevice': '我的设备',
+  'home.deviceId': '设备 ID',
+  'home.deviceName': '设备名称',
+  'home.node': '中转节点',
+  'home.nodeConnected': '已连接',
+  'home.nodeOffline': '未连接',
+  'home.copy': '复制',
+  'home.copied': '已复制',
+  'home.servers': '我的服务器',
+  'home.connect': '连接',
+  'home.edit': '编辑',
+  'home.delete': '删除',
+  'home.lastConnected': '最近连接',
+  'home.neverConnected': '从未连接',
+  'home.deleteConfirmTitle': '删除服务器',
+  'home.deleteConfirmMessage': '确定要删除「{name}」吗？该配置将从本地移除。',
+  'home.deleteConfirm': '确认删除',
+  'home.cancel': '取消',
+  'home.empty': '还没有添加服务器',
+  'home.emptyHint': '添加一台带公网地址的服务器，OpenRemote 会自动部署中转节点',
+  'home.addFirst': '添加服务器',
+  'home.noNode': '未部署节点',
+  'home.hint': '控制端和被控端都登录同一节点后，即可互相看到并远程控制。',
+
+  'server.back': '返回',
+  'server.onlineComputers': '在线设备',
+  'server.online': '在线',
+  'server.refresh': '刷新',
+  'server.noDevices': '暂无设备在线',
+  'server.noDevicesHint': '在另一台电脑上运行 OpenRemote 并连接同一节点后，会出现在这里',
+  'server.selfOnline': '本机「{name}」已上线，等待其他设备接入',
+  'server.remoteControl': '远程控制',
+  'server.connectingNode': '正在连接中转节点…',
+  'server.nodeOffline': '中转节点未连接',
+  'server.waitingApproval': '正在建立画面…',
+  'server.requestRejected': '对方拒绝了连接',
+  'server.nodeMissing': '未部署中转节点',
+  'server.nodeMissingHint': '编辑服务器并填写 SSH 密码，保存时会自动部署中转节点。',
+  'server.disconnect': '断开',
+
+  'add.title': '添加服务器',
+  'add.editTitle': '编辑服务器',
+  'add.subtitle': '填写服务器信息，OpenRemote 会自动部署中转节点',
+  'add.name': '服务器名称',
+  'add.namePlaceholder': '例如：公司服务器',
+  'add.host': '主机地址',
+  'add.hostPlaceholder': 'IP 地址或域名',
+  'add.port': 'SSH 端口',
+  'add.username': '用户名',
+  'add.usernamePlaceholder': 'root',
+  'add.password': '密码',
+  'add.passwordPlaceholder': 'SSH 登录密码',
+  'add.remark': '备注',
+  'add.remarkPlaceholder': '可选',
+  'add.save': '保存服务器',
+  'add.cancel': '取消',
+  'add.errorName': '请填写服务器名称',
+  'add.errorHost': '请填写主机地址',
+  'add.errorPort': '端口必须是 1 - 65535 之间的数字',
+  'add.saved': '服务器已保存',
+  'add.test': '测试连接',
+  'add.testOk': '服务器连接成功',
+  'add.testFailed': '连接测试失败',
+  'add.passwordRequired': '请先填写 SSH 密码',
+  'add.duplicate': '该服务器已存在，不能重复添加',
+  'add.sshHint': '保存时会通过 SSH 上传并启动中转节点（节点端口 9000）。',
+  'add.nodeDeployed': '中转节点部署成功',
+  'add.nodeFailed': '部署失败',
+
+  'remote.notFound': '未找到服务器配置',
+  'remote.notFoundHint': '该服务器可能已被删除，返回主页重新选择。',
+  'remote.back': '返回',
+  'remote.connecting': '正在连接画面…',
+  'remote.connected': '已连接',
+  'remote.disconnected': '已断开',
+  'remote.waitingScreen': '等待远端画面…',
+  'remote.codecUnsupported': '当前环境不支持 H.264 解码（需要 WebCodecs）',
+  'remote.reconnect': '重新连接',
+  'remote.disconnect': '断开连接',
+  'remote.fullscreen': '全屏',
+  'remote.exitFullscreen': '退出全屏',
+  'remote.fps': 'FPS',
+  'remote.encrypted': '中继加密通道',
+  'remote.noStream': '未收到画面通道，请从在线设备列表重新发起控制。',
+  'remote.quality': '画质',
+  'remote.qualityOriginal': '原画',
+  'remote.qualityOriginalHint': '原始分辨率',
+  'remote.qualityHD': '高清',
+  'remote.qualitySmooth': '流畅',
+  'remote.qualityLow': '省流',
+  'remote.pin': '固定工具栏',
+  'remote.unpin': '取消固定',
+  'remote.dragToolbar': '拖动可移动工具栏',
+  'remote.showToolbar': '显示工具栏',
+  'remote.frameRate': '帧率',
+  'remote.sendClipboard': '发送剪切板',
+  'remote.clipboardEmpty': '本机剪切板没有文本',
+  'remote.clipboardSent': '已发送到远端剪切板',
+  'remote.clipboardCopied': '已把远端剪切板复制到本机',
+  'remote.clipboardFailed': '读取剪切板失败',
+  'remote.files': '文件传输',
+  'remote.sendFiles': '发送文件',
+  'remote.fileHint': '文件会保存到被控端的 Downloads/OpenRemote 目录',
+  'remote.remoteFiles': '远端文件',
+  'remote.refresh': '刷新',
+  'remote.emptyFiles': '暂无文件',
+  'remote.download': '下载',
+  'remote.downloading': '正在下载',
+  'remote.fileFailed': '传输失败',
+  'remote.close': '关闭',
+
+  'settings.title': '设置',
+  'settings.subtitle': '个性化你的远程控制体验',
+  'settings.device': '本机设备',
+  'settings.deviceHint': '这台电脑上线后会用此名称显示在其他人的设备列表中',
+  'settings.deviceName': '设备名称',
+  'settings.language': '语言 / Language',
+  'settings.languageHint': '切换界面显示语言',
+  'settings.connection': '连接行为',
+  'settings.fullscreenOnConnect': '连接后自动全屏',
+  'settings.fullscreenOnConnectHint': '建立连接后让窗口进入全屏模式',
+  'settings.confirmBeforeDisconnect': '断开前确认',
+  'settings.confirmBeforeDisconnectHint': '断开远程会话前弹出确认提示',
+  'settings.reset': '恢复默认设置',
+  'settings.resetDone': '已恢复默认设置'
+}
+
+const enUS: Messages = {
+  'app.name': 'OpenRemote',
+  'app.tagline': 'Remote Desktop',
+
+  'nav.devices': 'Devices',
+  'nav.addServer': 'Add Server',
+  'nav.promotion': 'Recommended Servers',
+  'nav.settings': 'Settings',
+
+  'promotion.title': 'Recommended servers',
+  'promotion.subtitle': 'Pick a nearby cloud server for your OpenRemote remote desktop — faster, steadier connections',
+  'promotion.tencentName': 'Tencent Cloud',
+  'promotion.tencentDesc': 'Lightweight application servers are ready to use, ideal for hosting a low-latency remote desktop.',
+  'promotion.baiduName': 'Baidu Cloud',
+  'promotion.baiduDesc': 'Baidu Cloud BCC servers with stable performance, built for long remote desktop sessions.',
+  'promotion.open': 'Learn more',
+  'promotion.hint': 'Links lead to third-party cloud promotions; purchases and support are handled by the provider.',
+
+  'home.title': 'Remote Control',
+  'home.subtitle': 'Connect to your own computers through the relay node',
+  'home.myDevice': 'My Device',
+  'home.deviceId': 'Device ID',
+  'home.deviceName': 'Device name',
+  'home.node': 'Relay node',
+  'home.nodeConnected': 'Connected',
+  'home.nodeOffline': 'Offline',
+  'home.copy': 'Copy',
+  'home.copied': 'Copied',
+  'home.servers': 'My Servers',
+  'home.connect': 'Connect',
+  'home.edit': 'Edit',
+  'home.delete': 'Delete',
+  'home.lastConnected': 'Last connected',
+  'home.neverConnected': 'Never connected',
+  'home.deleteConfirmTitle': 'Delete Server',
+  'home.deleteConfirmMessage': 'Delete "{name}"? This configuration will be removed locally.',
+  'home.deleteConfirm': 'Delete',
+  'home.cancel': 'Cancel',
+  'home.empty': 'No servers yet',
+  'home.emptyHint': 'Add a server with a public address and OpenRemote deploys the relay node automatically',
+  'home.addFirst': 'Add Server',
+  'home.noNode': 'Node not deployed',
+  'home.hint': 'Once both sides join the same relay node, they appear in each other\'s device list.',
+
+  'server.back': 'Back',
+  'server.onlineComputers': 'Online Devices',
+  'server.online': 'Online',
+  'server.refresh': 'Refresh',
+  'server.noDevices': 'No devices online',
+  'server.noDevicesHint': 'Run OpenRemote on another computer and join the same node to see it here',
+  'server.selfOnline': 'This device "{name}" is online, waiting for other devices',
+  'server.remoteControl': 'Remote Control',
+  'server.connectingNode': 'Connecting to relay node…',
+  'server.nodeOffline': 'Relay node not connected',
+  'server.waitingApproval': 'Starting the stream…',
+  'server.requestRejected': 'The remote device rejected the connection',
+  'server.nodeMissing': 'No relay node deployed',
+  'server.nodeMissingHint': 'Edit the server and fill in the SSH password; the node is deployed on save.',
+  'server.disconnect': 'Disconnect',
+
+  'add.title': 'Add Server',
+  'add.editTitle': 'Edit Server',
+  'add.subtitle': 'Fill in the server details; OpenRemote deploys the relay node automatically',
+  'add.name': 'Server name',
+  'add.namePlaceholder': 'e.g. Office server',
+  'add.host': 'Host',
+  'add.hostPlaceholder': 'IP address or hostname',
+  'add.port': 'SSH port',
+  'add.username': 'Username',
+  'add.usernamePlaceholder': 'root',
+  'add.password': 'Password',
+  'add.passwordPlaceholder': 'SSH password',
+  'add.remark': 'Notes',
+  'add.remarkPlaceholder': 'Optional',
+  'add.save': 'Save Server',
+  'add.cancel': 'Cancel',
+  'add.errorName': 'Please enter a server name',
+  'add.errorHost': 'Please enter a host address',
+  'add.errorPort': 'Port must be a number between 1 and 65535',
+  'add.saved': 'Server saved',
+  'add.test': 'Test connection',
+  'add.testOk': 'Server connection succeeded',
+  'add.testFailed': 'Connection test failed',
+  'add.passwordRequired': 'Please enter the SSH password first',
+  'add.duplicate': 'This server already exists',
+  'add.sshHint': 'The relay node is uploaded and started over SSH on save (node port 9000).',
+  'add.nodeDeployed': 'Relay node deployed',
+  'add.nodeFailed': 'Deployment failed',
+
+  'remote.notFound': 'Server configuration not found',
+  'remote.notFoundHint': 'This server may have been deleted. Go back and choose another one.',
+  'remote.back': 'Back',
+  'remote.connecting': 'Connecting to the stream…',
+  'remote.connected': 'Connected',
+  'remote.disconnected': 'Disconnected',
+  'remote.waitingScreen': 'Waiting for the remote screen…',
+  'remote.codecUnsupported': 'H.264 decoding is not supported here (WebCodecs required)',
+  'remote.reconnect': 'Reconnect',
+  'remote.disconnect': 'Disconnect',
+  'remote.fullscreen': 'Fullscreen',
+  'remote.exitFullscreen': 'Exit fullscreen',
+  'remote.fps': 'FPS',
+  'remote.encrypted': 'Relay channel',
+  'remote.noStream': 'No stream channel. Start remote control again from the device list.',
+  'remote.quality': 'Quality',
+  'remote.qualityOriginal': 'Original',
+  'remote.qualityOriginalHint': 'Native resolution',
+  'remote.qualityHD': 'HD',
+  'remote.qualitySmooth': 'Smooth',
+  'remote.qualityLow': 'Low bandwidth',
+  'remote.pin': 'Pin toolbar',
+  'remote.unpin': 'Unpin toolbar',
+  'remote.dragToolbar': 'Drag to move the toolbar',
+  'remote.showToolbar': 'Show toolbar',
+  'remote.frameRate': 'Frame rate',
+  'remote.sendClipboard': 'Send clipboard',
+  'remote.clipboardEmpty': 'Your clipboard has no text',
+  'remote.clipboardSent': 'Sent to the remote clipboard',
+  'remote.clipboardCopied': 'Copied the remote clipboard to this device',
+  'remote.clipboardFailed': 'Failed to read the clipboard',
+  'remote.files': 'File transfer',
+  'remote.sendFiles': 'Send files',
+  'remote.fileHint': 'Files are saved to Downloads/OpenRemote on the remote device',
+  'remote.remoteFiles': 'Remote files',
+  'remote.refresh': 'Refresh',
+  'remote.emptyFiles': 'No files yet',
+  'remote.download': 'Download',
+  'remote.downloading': 'Downloading',
+  'remote.fileFailed': 'Transfer failed',
+  'remote.close': 'Close',
+
+  'settings.title': 'Settings',
+  'settings.subtitle': 'Personalize your remote control experience',
+  'settings.device': 'This device',
+  'settings.deviceHint': 'The name shown in other people\'s device list when this computer is online',
+  'settings.deviceName': 'Device name',
+  'settings.language': 'Language',
+  'settings.languageHint': 'Switch the interface language',
+  'settings.connection': 'Connection',
+  'settings.fullscreenOnConnect': 'Fullscreen on connect',
+  'settings.fullscreenOnConnectHint': 'Put the window into fullscreen after connecting',
+  'settings.confirmBeforeDisconnect': 'Confirm before disconnect',
+  'settings.confirmBeforeDisconnectHint': 'Ask for confirmation before ending a session',
+  'settings.reset': 'Restore defaults',
+  'settings.resetDone': 'Defaults restored'
+}
+
+const dictionaries: Record<Locale, Messages> = {
+  'zh-CN': zhCN,
+  'en-US': enUS
+}
+
+function loadLocale(): Locale {
+  return localStorage.getItem(STORAGE_KEY) === 'en-US' ? 'en-US' : 'zh-CN'
+}
+
+export const useLanguageStore = defineStore('language', () => {
+  const locale = ref<Locale>(loadLocale())
+
+  const locales: { value: Locale; label: string }[] = [
+    { value: 'zh-CN', label: '中文' },
+    { value: 'en-US', label: 'English' }
+  ]
+
+  const isZh = computed(() => locale.value === 'zh-CN')
+
+  function setLocale(value: Locale) {
+    locale.value = value
+  }
+
+  function t(key: string, params?: Record<string, string | number>): string {
+    const dict = dictionaries[locale.value]
+    let text = dict[key] ?? dictionaries['en-US'][key] ?? key
+    if (params) {
+      for (const [name, value] of Object.entries(params)) {
+        text = text.split(`{${name}}`).join(String(value))
+      }
+    }
+    return text
+  }
+
+  watch(locale, (value) => localStorage.setItem(STORAGE_KEY, value), { immediate: true })
+
+  return { locale, locales, isZh, setLocale, t }
+})
