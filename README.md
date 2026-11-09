@@ -7,6 +7,10 @@ OpenRemote 是一个开箱即用的远程桌面客户端：在两台电脑上登
 - 穿透协议：OpenPenetrate —— 内网穿透可视化管理工具
 - 传输格式：ffmpeg 编码 H.264（Annex-B），浏览器端 WebCodecs 硬解
 
+## 视频演示
+
+[OpenRemote 远程桌面演示（哔哩哔哩）](https://www.bilibili.com/video/BV1TPW86xEvi/)
+
 ## 功能特性
 
 - **实时画面**：ffmpeg 采集并编码 H.264，优先硬件编码（NVENC / QSV / AMF / VideoToolbox），不可用时回退 libx264
